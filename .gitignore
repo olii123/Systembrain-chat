@@ -1,0 +1,6 @@
+node_modules/
+server/data/db.json
+server/data/*.json
+.env
+.env.*
+!.env.example
