@@ -1,4 +1,5 @@
--- SystemBrain chat schema. Written for Cloudflare D1 (SQLite).
+-- SystemBrain chat schema. Every row carries client_id and every query filters on it.
+-- Written for Cloudflare D1 (SQLite).
 -- The local JSON store (server/data/db.json) uses the same tables and columns.
 
 CREATE TABLE IF NOT EXISTS conversations (
@@ -13,12 +14,14 @@ CREATE TABLE IF NOT EXISTS conversations (
 
 CREATE TABLE IF NOT EXISTS messages (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_id       TEXT NOT NULL,
   conversation_id TEXT NOT NULL REFERENCES conversations(id),
   role            TEXT NOT NULL CHECK (role IN ('user','assistant')),
   content         TEXT NOT NULL,
   created_at      TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(client_id, conversation_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_client ON conversations(client_id);
 
 CREATE TABLE IF NOT EXISTS leads (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,7 +36,7 @@ CREATE TABLE IF NOT EXISTS leads (
   created_at      TEXT NOT NULL,
   updated_at      TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_leads_client ON leads(client_id);
+CREATE INDEX IF NOT EXISTS idx_leads_client ON leads(client_id, conversation_id);
 
 CREATE TABLE IF NOT EXISTS summaries (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -6,13 +6,20 @@
   "description": "SystemBrain embeddable chat widget plus a small local backend",
   "scripts": {
     "start": "node server/src/node.js",
-    "test": "node tests/e2e.mjs"
+    "test": "node tests/e2e.mjs",
+    "build:assets": "rm -rf .assets && mkdir -p .assets && cp -r widget demo .assets/",
+    "dev:worker": "npm run build:assets && wrangler dev",
+    "deploy": "npm run build:assets && wrangler deploy",
+    "db:migrate": "wrangler d1 execute systembrain-chat --remote --file=server/schema.sql",
+    "db:migrate:local": "wrangler d1 execute systembrain-chat --local --file=server/schema.sql",
+    "test:live": "node tests/live.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
     "hono": "^4.6.0"
   },
   "devDependencies": {
-    "playwright": "^1.48.0"
+    "playwright": "^1.48.0",
+    "wrangler": "^4.151.1"
   }
 }

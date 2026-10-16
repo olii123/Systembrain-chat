@@ -12,10 +12,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(here, '..', '..');
 const rel = p => relative(process.cwd(), join(rootDir, p)) || '.';
 const env = process.env;
-const store = createJsonStore(env.DB_FILE || join(rootDir, 'server', 'data', 'db.json'));
+const jsonStore = createJsonStore(env.DB_FILE || join(rootDir, 'server', 'data', 'db.json'));
 const loadClient = async id => { try { return JSON.parse(await readFile(join(rootDir, 'server', 'clients', `${id}.json`), 'utf8')); } catch { return null; } };
 
-const app = createApp({ store, loadClient, getProvider, env });
+const app = createApp({ storeFor: () => jsonStore, loadClient, getProvider, env });
 app.use('/widget/*', serveStatic({ root: rel('.'), onFound: (_p, c) => c.header('cache-control', 'no-cache') }));
 app.use('/demo/*', serveStatic({ root: rel('.') }));
 app.get('/', c => c.redirect('/demo/'));

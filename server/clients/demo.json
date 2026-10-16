@@ -1,5 +1,7 @@
 {
   "clientId": "demo",
+  "widgetVersion": "v1",
+  "features": {},
   "brand": "Acme Services",
   "logoText": "AS",
   "colours": {
