@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Acme Services | SystemBrain chat demo</title>
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;min-height:100vh;background:linear-gradient(135deg,#38bdf8 0%,#6366f1 45%,#f0abfc 100%);color:#fff}
+nav{display:flex;align-items:center;justify-content:space-between;padding:22px 48px}
+.logo{font-weight:700;font-size:20px;display:flex;gap:10px;align-items:center}.logo i{width:34px;height:34px;border-radius:10px;background:#fff;color:#0a0a0a;display:grid;place-items:center;font-style:normal;font-size:13px}
+nav a{color:#fff;text-decoration:none;margin-left:28px;font-weight:600;opacity:.9}
+.hero{padding:90px 48px;max-width:680px}h1{font-size:56px;line-height:1.05;letter-spacing:-.03em;margin:0 0 20px}
+p{font-size:19px;line-height:1.55;opacity:.92;margin:0 0 32px}
+.cta{display:inline-block;background:#fff;color:#0a0a0a;padding:16px 28px;border-radius:999px;font-weight:600;text-decoration:none;border:0;font-size:16px;cursor:pointer}
+.tag{position:fixed;left:48px;bottom:24px;font-size:12px;opacity:.8}
+@media(max-width:600px){nav{padding:18px 20px}nav .links{display:none}.hero{padding:48px 20px}h1{font-size:38px}.tag{left:20px;right:96px}}
+</style></head><body>
+<nav><div class="logo"><i>AS</i>Acme Services</div><div class="links"><a href="#">Services</a><a href="#">About</a><a href="#">Contact</a></div></nav>
+<section class="hero"><h1>A demo business for the SystemBrain chat widget.</h1><p>This page is a stand-in for a client website. The chat bubble in the corner is added with one script tag.</p>
+<button class="cta" onclick="window.SystemBrainWidget && SystemBrainWidget.open()">Chat with us</button></section>
+<div class="tag">SystemBrain chat, example client "demo"</div>
+<!-- The only line a client site needs: -->
+<script src="/widget/widget.js" data-client-id="demo" defer></script>
+</body></html>

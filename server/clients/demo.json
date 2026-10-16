@@ -1,0 +1,75 @@
+{
+  "clientId": "demo",
+  "brand": "Acme Services",
+  "logoText": "AS",
+  "colours": {
+    "accent": "#0a0a0a",
+    "accentText": "#ffffff"
+  },
+  "greeting": "Hi there! I am the Acme Services assistant. I can give you a price guide, book a visit or answer questions.",
+  "teaser": "Questions? Ask me",
+  "chips": [
+    "Get a quote",
+    "Book a visit",
+    "Hours"
+  ],
+  "placeholder": "Ask about prices, bookings, hours...",
+  "phone": "0400 000 000",
+  "sms": "0400000000",
+  "ownerName": "The Acme team",
+  "tone": "Friendly, clear and brief. Plain Australian English. Two or three sentences at most.",
+  "summaryEmail": "owner@example.com",
+  "services": [
+    {
+      "name": "Standard service visit",
+      "price": "from $150"
+    },
+    {
+      "name": "Large or after-hours job",
+      "price": "from $250"
+    }
+  ],
+  "bookingSlots": [
+    "Morning (8 to 12)",
+    "Afternoon (12 to 4)"
+  ],
+  "bookingKeywords": [
+    "book",
+    "appointment",
+    "available",
+    "visit"
+  ],
+  "bookingReply": "We have spots available this week. I just need a few details first.",
+  "fallbackReply": "Good question. I will pass that to the team, or you can tap Talk to a person below. I can also quote or book a visit right now.",
+  "faqs": [
+    {
+      "keywords": [
+        "hour",
+        "open",
+        "time"
+      ],
+      "status": "Looking that up...",
+      "answer": "We work Monday to Friday 8am to 5pm. This chat is open around the clock.",
+      "chips": [
+        "Get a quote",
+        "Book a visit"
+      ]
+    },
+    {
+      "keywords": [
+        "area",
+        "suburb",
+        "where"
+      ],
+      "status": "Checking service areas...",
+      "answer": "We cover the whole metro area. Tell us your suburb and we will confirm."
+    },
+    {
+      "keywords": [
+        "insur"
+      ],
+      "status": "Checking...",
+      "answer": "Yes, we are fully insured."
+    }
+  ]
+}
