@@ -10,6 +10,12 @@
     // Shared database for all clients. A dedicated per-client DB gets its own entry here (see store/repo.js).
     { "binding": "DB", "database_name": "systembrain-chat", "database_id": "49dbe542-5d5d-4653-b174-258dd7258de8" }
   ],
+  // Knowledge base. Embeddings from Workers AI; vectors in Vectorize, one namespace per client.
+  // Create the index once with `npm run kb:setup` (768 dimensions, cosine, metadata index on client_id).
+  "ai": { "binding": "AI" },
+  "vectorize": [{ "binding": "KB_INDEX", "index_name": "systembrain-kb" }],
+  // Weekly re-crawl of every client with a website: Sundays 17:00 UTC (Monday 3am or 4am Sydney time).
+  "triggers": { "crons": ["0 17 * * SUN"] },
   // Switch to "grok" once the secret is set: npx wrangler secret put XAI_API_KEY
   "vars": { "AI_PROVIDER": "mock" },
   "observability": { "enabled": true }

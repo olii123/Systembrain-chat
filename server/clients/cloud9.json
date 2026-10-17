@@ -3,6 +3,7 @@
   "widgetVersion": "v1",
   "features": {},
   "brand": "Cloud 9 Window Cleaning",
+  "website": "https://www.cloud9windowcleaning.com.au",
   "logoText": "C9",
   "colours": {
     "accent": "#0a0a0a",
@@ -71,16 +72,17 @@
         "where"
       ],
       "status": "Checking service areas...",
-      "answer": "We cover the Eastern Suburbs, Inner West, North Shore and the Northern Beaches."
+      "answer": "We cover Greater Sydney, including the North Shore, Northern Beaches, Sutherland Shire, Eastern Suburbs, Inner West and the St George area."
     },
     {
       "keywords": [
         "solar",
-        "gutter",
-        "pressure"
+        "balustrade",
+        "pool fence",
+        "deionised"
       ],
       "status": "Checking services...",
-      "answer": "Yes, we also do solar panel cleaning, gutter clears and pressure washing. Want a quote?",
+      "answer": "Yes. Along with residential window cleaning, we do solar panel cleaning, glass balustrade and pool fence cleaning, and pure deionised water cleaning. Want a quote?",
       "chips": [
         "Get a quote"
       ]

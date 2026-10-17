@@ -12,7 +12,12 @@
     "deploy": "npm run build:assets && wrangler deploy",
     "db:migrate": "wrangler d1 execute systembrain-chat --remote --file=server/schema.sql",
     "db:migrate:local": "wrangler d1 execute systembrain-chat --local --file=server/schema.sql",
-    "test:live": "node tests/live.mjs"
+    "test:live": "node tests/live.mjs",
+    "test:unit": "node --test --no-warnings tests/kb.test.mjs",
+    "kb:local": "node server/src/kb/cli.js",
+    "kb:setup": "wrangler vectorize create systembrain-kb --dimensions=1024 --metric=cosine && wrangler vectorize create-metadata-index systembrain-kb --property-name=client_id --type=string",
+    "kb:reindex": "node tests/reindex.mjs",
+    "test:live:kb": "node tests/live-kb.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",

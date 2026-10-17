@@ -73,5 +73,23 @@
       "status": "Checking...",
       "answer": "Yes, we are fully insured."
     }
+  ],
+  "kbFaqs": [
+    {
+      "question": "Do you offer a warranty on your work?",
+      "answer": "Yes. Every Acme Services job comes with a 30 day workmanship guarantee. If something is not right, we come back and fix it free."
+    },
+    {
+      "question": "How do I pay?",
+      "answer": "We take card, bank transfer and cash. Payment is due when the job is finished, and we email a receipt the same day."
+    },
+    {
+      "question": "Do you charge a call-out fee?",
+      "answer": "No call-out fee for standard visits inside the metro area. After-hours visits have a $60 call-out fee."
+    },
+    {
+      "question": "How far ahead do I need to book?",
+      "answer": "Most weeks we can visit within two to three working days. Urgent jobs are often same day if you call before 10am."
+    }
   ]
 }
