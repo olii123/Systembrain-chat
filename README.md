@@ -8,7 +8,7 @@ Right now it runs on your own computer, with no outside services. The "AI" is a 
 
 | Folder | What it is |
 | --- | --- |
-| `widget/widget.js` | The chat bubble. This is the one file a website loads. |
+| `widget/v1/widget.js` | The chat bubble (version 1). Websites load it through `/widget.js`. |
 | `server/` | The server that the bubble talks to. |
 | `server/clients/` | One settings file per business (client). |
 | `server/data/db.json` | Where leads, chats and summaries are saved (created automatically). |
@@ -35,7 +35,7 @@ To run the automatic browser test: `npx playwright install chromium` (first time
 Paste this one line just before `</body>` on the website, changing the address to wherever your server lives and `demo` to the client's name:
 
 ```html
-<script src="https://YOUR-SERVER/widget/widget.js" data-client-id="demo" defer></script>
+<script src="https://systembrain-chat.systembrain.workers.dev/widget.js" data-client-id="demo" defer></script>
 ```
 
 That is all. The bubble loads its colours, greeting and buttons from the server, so you never need to edit the website again to change them.
@@ -45,7 +45,7 @@ That is all. The bubble loads its colours, greeting and buttons from the server,
 1. Go to `server/clients/`.
 2. Copy `demo.json` and rename the copy to the new client's short name, for example `bobs-plumbing.json`. Use lowercase letters, numbers and dashes only.
 3. Open the new file and change the text. Inside the file, set `"clientId"` to the same short name.
-4. Restart the server (Ctrl and C, then `npm start`).
+4. Restart the server (Ctrl and C, then `npm start`). For Cloudflare, also import the JSON in `server/src/worker.js` and add it to `clients`, then `npm run deploy`.
 5. On the client's website use `data-client-id="bobs-plumbing"`.
 
 ### What each setting means
@@ -87,15 +87,40 @@ The bubble talks to four addresses on the server:
 * `POST /api/lead` saves the quote and booking forms.
 * `POST /api/end` ends the chat and saves a summary.
 
-## Later: Cloudflare Workers, D1 and Grok
+## Running on Cloudflare
 
-The server is built with Hono, which runs the same way on your computer and on Cloudflare. Moving it over is a short job:
+The same app runs as a Cloudflare Worker named `systembrain-chat` (`server/src/worker.js`, settings in `wrangler.jsonc`).
 
-1. **Cloudflare Workers** (hosting). `server/src/app.js` holds all the logic and does not depend on Node. `server/src/worker.example.js` shows the Cloudflare starting point. The widget file goes on Cloudflare too (or any web host), and websites point their script tag at it.
-2. **Cloudflare D1** (database). Create a D1 database and load `server/schema.sql` into it. The local file store is swapped for the D1 store sketched in `worker.example.js`; the tables are already the same.
-3. **Grok** (real AI). `server/src/providers/grok.js` is written but switched off. To turn it on, set two settings: `AI_PROVIDER=grok` and `XAI_API_KEY=your key`. On Cloudflare the key is stored as a secret. Grok then answers using the client's services, FAQs and tone. Until then, `AI_PROVIDER=mock` (the default) is used.
+- Test demo pages: https://systembrain-chat.systembrain.workers.dev/demo/ (demo client) and https://systembrain-chat.systembrain.workers.dev/demo/cloud9/ (Cloud 9).
+- The widget and demo pages are served as Workers static assets. `npm run deploy` copies `widget/` and `demo/` into `.assets/` first, so nothing else in the repo is public.
+- Storage is the D1 database `systembrain-chat`. Create the tables with `npm run db:migrate`. Local `npm start` still uses the JSON file.
+- Client configs in `server/clients/*.json` are bundled into the Worker (see `worker.js`).
+- `AI_PROVIDER` is `mock` by default (set in `wrangler.jsonc`). To switch to Grok, run `npx wrangler secret put XAI_API_KEY`, set `AI_PROVIDER` to `grok`, then deploy. The key never goes in the repo. Summary emails come later, sent to each client's `summaryEmail`.
+- Live test: `npm run test:live` (demo) and `DEMO_PATH=/demo/cloud9/ npm run test:live` (Cloud 9). Screenshots go in `shots-live/<client>/`.
 
-Summary emails will also be switched on at that stage, sent to each client's `summaryEmail`.
+### Client isolation
+
+Every table row has a `client_id`, and every query filters on it. Routes never touch the database directly. They go through `server/src/store/repo.js`, which ties a store to one client and checks that a chat session belongs to that client before using it. Another client's session gets a 403, and unknown client IDs get a 404.
+
+All clients share the `DB` binding today. To give a client its own database, add another `d1_databases` entry in `wrangler.jsonc` (for example binding `DB_ACME`), run the schema on it, and add `acme: 'DB_ACME'` to `D1_BINDINGS` in `repo.js`.
+
+### Widget versions and rollout
+
+Widget files live at `/widget/<version>/widget.js` (today only `v1`). Websites load `/widget.js`, which points to the default version. When the widget loads a client's config and that client has a different `widgetVersion`, it hands over to that version. `/widget.js?c=<clientId>` also jumps straight to the client's version. To try a new version on one client first:
+
+1. Add `widget/v2/widget.js` (set `VERSION = 'v2'` inside it) and add `'v2'` to `WIDGET_VERSIONS` in `app.js`.
+2. Set `"widgetVersion": "v2"` in that one client's JSON and deploy. Everyone else stays on `v1`.
+3. For smaller switches, use the `features` object in a client config.
+
+### Rolling back
+
+Every deploy creates a new Worker version.
+
+- `npx wrangler deployments list` shows recent deploys.
+- `npx wrangler rollback` goes back to the previous version, or `npx wrangler rollback <version-id>` for a specific one.
+- `npx wrangler versions list` and `npx wrangler versions deploy` let you split traffic between two versions for a gradual rollout.
+
+Rollback only restores code and bundled configs. It does not undo D1 data or schema changes. To roll one client back to an older widget, change its `widgetVersion` and deploy.
 
 ## Settings you can change when starting
 

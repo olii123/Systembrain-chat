@@ -1,11 +1,16 @@
 // Hono app using only Web-standard Request/Response. The same file runs in Node
 // (see node.js) and, later, in a Cloudflare Worker (see README).
-// Dependencies are injected: { store, loadClient, getProvider, env }.
+// Dependencies are injected: { storeFor, loadClient, getProvider, env }.
+// storeFor(clientId) returns the raw store for that client (shared by default, or a dedicated
+// database). Routes only use repo(cfg), which is bound to one client_id.
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { streamSSE } from 'hono/streaming';
 import { buildSummary } from './summary.js';
+import { bindRepo, TenantError } from './store/repo.js';
 
+export const WIDGET_VERSIONS = ['v1']; // add 'v2' when widget/v2/widget.js exists
+const DEFAULT_WIDGET = 'v1';
 const ID = /^[a-z0-9-]{1,64}$/;
 const SID = /^[A-Za-z0-9_-]{8,64}$/;
 const clip = (s, n) => String(s ?? '').slice(0, n);
@@ -13,15 +18,30 @@ const clip = (s, n) => String(s ?? '').slice(0, n);
 // The public part of a client config. Never send owner-only fields (summary email, tone) to browsers.
 export function publicConfig(c) {
   return { clientId: c.clientId, brand: c.brand, logoText: c.logoText, colours: c.colours, greeting: c.greeting,
-    teaser: c.teaser, chips: c.chips, placeholder: c.placeholder, phone: c.phone, sms: c.sms, bookingSlots: c.bookingSlots };
+    teaser: c.teaser, chips: c.chips, placeholder: c.placeholder, phone: c.phone, sms: c.sms, bookingSlots: c.bookingSlots,
+    widgetVersion: c.widgetVersion || 'v1', features: c.features || {} };
 }
 
-export function createApp({ store, loadClient, getProvider, env = {} }) {
+export function createApp({ storeFor, loadClient, getProvider, env = {} }) {
   const app = new Hono();
+  const repo = cfg => bindRepo(storeFor(cfg.clientId), cfg.clientId);
+  app.onError((err, c) => {
+    if (err instanceof TenantError) return c.json({ error: err.message }, 403);
+    console.error('[error]', err.message); return c.json({ error: 'Server error' }, 500);
+  });
   app.use('/api/*', cors({ origin: '*', allowMethods: ['GET', 'POST', 'OPTIONS'], allowHeaders: ['content-type'] }));
 
   const client = async id => (ID.test(id || '') ? await loadClient(id) : null);
   const body = async c => { try { return await c.req.json(); } catch { return null; } };
+
+  // Versioned widget. Files live at /widget/<version>/widget.js. The /widget.js alias picks the
+  // version from the client's config (widgetVersion), so a new version can go to one client first.
+  app.get('/widget.js', async c => {
+    const cfg = await client(c.req.query('c'));
+    const v = cfg && WIDGET_VERSIONS.includes(cfg.widgetVersion) ? cfg.widgetVersion : DEFAULT_WIDGET;
+    c.header('cache-control', 'public, max-age=300');
+    return c.redirect(`/widget/${v}/widget.js`, 302);
+  });
 
   app.get('/api/health', c => c.json({ ok: true, provider: getProvider(env).name }));
 
@@ -45,7 +65,8 @@ export function createApp({ store, loadClient, getProvider, env = {} }) {
     const last = messages[messages.length - 1];
     if (!last || last.role !== 'user') return c.json({ error: 'Last message must be from the user' }, 400);
 
-    await store.upsertConversation({ id: b.sessionId, clientId: cfg.clientId, pageUrl: clip(b.pageUrl, 500), userAgent: clip(c.req.header('user-agent'), 300) });
+    const store = repo(cfg);
+    await store.upsertConversation({ id: b.sessionId, pageUrl: clip(b.pageUrl, 500), userAgent: clip(c.req.header('user-agent'), 300) });
     await store.addMessage(b.sessionId, 'user', last.content);
     const provider = getProvider(env);
     const run = async emit => {
@@ -84,8 +105,9 @@ export function createApp({ store, loadClient, getProvider, env = {} }) {
     if (b.mobile && !/^(\+?61|0)4\d{8}$/.test(mobile)) return c.json({ error: 'Invalid Australian mobile' }, 400);
     if (!b.mobile && !b.day) return c.json({ error: 'Nothing to save' }, 400);
     const sid = SID.test(b.sessionId || '') ? b.sessionId : null;
-    if (sid) await store.upsertConversation({ id: sid, clientId: cfg.clientId });
-    const lead = await store.saveLead({ clientId: cfg.clientId, conversationId: sid, kind: b.kind,
+    const store = repo(cfg);
+    if (sid) await store.upsertConversation({ id: sid });
+    const lead = await store.saveLead({ conversationId: sid, kind: b.kind,
       name: clip(b.name, 100).trim(), mobile: b.mobile ? mobile : '', email: clip(b.email, 200).trim(), day: clip(b.day, 60), time: clip(b.time, 60) });
     return c.json({ ok: true, leadId: lead.id });
   });
@@ -96,10 +118,12 @@ export function createApp({ store, loadClient, getProvider, env = {} }) {
     const cfg = await client(b.clientId);
     if (!cfg) return c.json({ error: 'Unknown client' }, 404);
     if (!SID.test(b.sessionId || '')) return c.json({ error: 'Bad sessionId' }, 400);
+    const store = repo(cfg);
+    if (!await store.checkSession(b.sessionId)) return c.json({ ok: true, summary: null });
     const conv = await store.endConversation(b.sessionId);
     if (!conv) return c.json({ ok: true, summary: null });
     const summary = buildSummary(cfg, conv, await store.getMessages(conv.id), await store.getLeads(conv.id));
-    const row = await store.saveSummary({ conversationId: conv.id, clientId: cfg.clientId, summary, emailTo: cfg.summaryEmail });
+    const row = await store.saveSummary({ conversationId: conv.id, summary, emailTo: cfg.summaryEmail });
     // TODO: send to cfg.summaryEmail (e.g. Cloudflare Email Workers or Resend) and set email_status = 'sent'.
     return c.json({ ok: true, summaryId: row.id, summary });
   });

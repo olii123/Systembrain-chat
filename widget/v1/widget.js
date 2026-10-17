@@ -1,9 +1,11 @@
 /*! SystemBrain chat widget (Glass Orb).
- * Embed: <script src="https://YOUR-SERVER/widget/widget.js" data-client-id="demo" defer></script>
+ * Embed: <script src="https://YOUR-SERVER/widget.js" data-client-id="demo" defer></script>
+ * If the client config names a different widgetVersion, this file hands over to /widget/<version>/widget.js.
  * Optional: data-api="https://api.example.com" (defaults to the server that served this file).
  */
 (function () {
   'use strict';
+  var VERSION = 'v1';
   if (window.SystemBrainWidget) return;
   var script = document.currentScript || document.querySelector('script[data-client-id]');
   if (!script) return;
@@ -284,7 +286,18 @@ transition:transform .28s cubic-bezier(.34,1.4,.64,1),opacity .2s,visibility 0s 
   function boot() {
     fetch(API + '/api/config/' + encodeURIComponent(CLIENT_ID))
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(start)
+      .then(function (cfg) {
+        // Per-client rollout: hand over to the version this client is on.
+        var v = cfg.widgetVersion;
+        if (v && v !== VERSION && /^v\d+$/.test(v)) {
+          var s = document.createElement('script');
+          s.src = API + '/widget/' + v + '/widget.js';
+          for (var i = 0; i < script.attributes.length; i++) { var a = script.attributes[i]; if (a.name !== 'src') s.setAttribute(a.name, a.value); }
+          if (!s.getAttribute('data-api')) s.setAttribute('data-api', API);
+          document.head.appendChild(s); return;
+        }
+        start(cfg);
+      })
       .catch(function (e) { console.warn('[SystemBrain] could not load config for "' + CLIENT_ID + '":', e.message); });
   }
   if (document.body) boot(); else document.addEventListener('DOMContentLoaded', boot);

@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "systembrain-chat",
+  "main": "server/src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  // Built by `npm run build:assets`: copies widget/ and demo/ into .assets/ so only those are public.
+  "assets": { "directory": "./.assets", "not_found_handling": "none", "run_worker_first": ["/widget.js"] },
+  "d1_databases": [
+    // Shared database for all clients. A dedicated per-client DB gets its own entry here (see store/repo.js).
+    { "binding": "DB", "database_name": "systembrain-chat", "database_id": "49dbe542-5d5d-4653-b174-258dd7258de8" }
+  ],
+  // Switch to "grok" once the secret is set: npx wrangler secret put XAI_API_KEY
+  "vars": { "AI_PROVIDER": "mock" },
+  "observability": { "enabled": true }
+}

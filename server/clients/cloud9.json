@@ -1,0 +1,105 @@
+{
+  "clientId": "cloud9",
+  "widgetVersion": "v1",
+  "features": {},
+  "brand": "Cloud 9 Window Cleaning",
+  "logoText": "C9",
+  "colours": {
+    "accent": "#0a0a0a",
+    "accentText": "#ffffff"
+  },
+  "greeting": "Hi there! I can quote, book a clean or answer questions about Cloud 9 across Sydney.",
+  "teaser": "Need a quote? Ask me",
+  "chips": [
+    "Get a quote",
+    "Book a clean",
+    "Hours"
+  ],
+  "placeholder": "Ask about quotes, bookings, hours...",
+  "phone": "0400 000 000",
+  "sms": "0400000000",
+  "ownerName": "Oli",
+  "tone": "Friendly, short and local. Plain Australian English. No jargon. Two or three sentences at most.",
+  "summaryEmail": "owner@example.com",
+  "allowedOrigins": [
+    "*"
+  ],
+  "services": [
+    {
+      "name": "Residential window cleaning",
+      "price": "$180 to $320 for most homes, inside and out"
+    },
+    {
+      "name": "Apartment window cleaning",
+      "price": "from $120 for single storey apartments"
+    },
+    {
+      "name": "Solar panel cleaning",
+      "price": "from $150"
+    },
+    {
+      "name": "Gutter clears",
+      "price": "from $160"
+    },
+    {
+      "name": "Pressure washing",
+      "price": "quoted on site"
+    }
+  ],
+  "bookingSlots": [
+    "Morning (8 to 12)",
+    "Afternoon (12 to 4)"
+  ],
+  "faqs": [
+    {
+      "keywords": [
+        "hour",
+        "open",
+        "time"
+      ],
+      "status": "Looking that up...",
+      "answer": "We work Monday to Friday 7am to 5pm and Saturday 8am to 2pm. This chat is open around the clock.",
+      "chips": [
+        "Get a quote",
+        "Book a clean"
+      ]
+    },
+    {
+      "keywords": [
+        "area",
+        "suburb",
+        "where"
+      ],
+      "status": "Checking service areas...",
+      "answer": "We cover the Eastern Suburbs, Inner West, North Shore and the Northern Beaches."
+    },
+    {
+      "keywords": [
+        "solar",
+        "gutter",
+        "pressure"
+      ],
+      "status": "Checking services...",
+      "answer": "Yes, we also do solar panel cleaning, gutter clears and pressure washing. Want a quote?",
+      "chips": [
+        "Get a quote"
+      ]
+    },
+    {
+      "keywords": [
+        "insur"
+      ],
+      "status": "Checking...",
+      "answer": "Yes, we are fully insured with $20 million public liability cover."
+    }
+  ],
+  "bookingKeywords": [
+    "book",
+    "appointment",
+    "available",
+    "clean"
+  ],
+  "bookingReply": "We have spots this week across Sydney, including Saturdays. I just need a few details first.",
+  "fallbackReply": "Good question. I will pass that to the team, or you can tap Talk to a person below. I can also quote or book a clean right now.",
+  "quoteReply": "Most Sydney homes are $180 to $320 for inside and out, and single storey apartments start at $120. Final price depends on window count and access. Pop your details in and we will send a firm quote."
+}
