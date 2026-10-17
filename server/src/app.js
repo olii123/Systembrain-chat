@@ -1,6 +1,7 @@
 // Hono app using only Web-standard Request/Response. The same file runs in Node
 // (see node.js) and, later, in a Cloudflare Worker (see README).
-// Dependencies are injected: { storeFor, loadClient, getProvider, env }.
+// Dependencies are injected: { storeFor, loadClient, getProvider, env, kb }.
+// kb (optional) is the knowledge base: { search(clientId, query), reindex(cfg), stats(clientId) }.
 // storeFor(clientId) returns the raw store for that client (shared by default, or a dedicated
 // database). Routes only use repo(cfg), which is bound to one client_id.
 import { Hono } from 'hono';
@@ -22,7 +23,14 @@ export function publicConfig(c) {
     widgetVersion: c.widgetVersion || 'v1', features: c.features || {} };
 }
 
-export function createApp({ storeFor, loadClient, getProvider, env = {} }) {
+// Constant-time string compare (via SHA-256 so lengths match).
+async function sameSecret(a, b) {
+  const h = async s => new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(s))));
+  const [x, y] = await Promise.all([h(a), h(b)]); let d = 0; for (let i = 0; i < x.length; i++) d |= x[i] ^ y[i];
+  return d === 0;
+}
+
+export function createApp({ storeFor, loadClient, getProvider, env = {}, kb = null }) {
   const app = new Hono();
   const repo = cfg => bindRepo(storeFor(cfg.clientId), cfg.clientId);
   app.onError((err, c) => {
@@ -69,10 +77,16 @@ export function createApp({ storeFor, loadClient, getProvider, env = {} }) {
     await store.upsertConversation({ id: b.sessionId, pageUrl: clip(b.pageUrl, 500), userAgent: clip(c.req.header('user-agent'), 300) });
     await store.addMessage(b.sessionId, 'user', last.content);
     const provider = getProvider(env);
+    // Retrieval: only this client's chunks (see kb/vector-kb.js). A KB failure never blocks the chat.
+    let context = [];
+    if (kb) {
+      try { context = await kb.search(cfg.clientId, last.content); }
+      catch (err) { console.error('[kb search]', err.message); }
+    }
     const run = async emit => {
       let text = '';
       try {
-        for await (const ev of provider.chat({ client: cfg, messages, sessionId: b.sessionId })) {
+        for await (const ev of provider.chat({ client: cfg, messages, sessionId: b.sessionId, context })) {
           if (ev.type === 'delta') text += ev.text;
           await emit(ev);
         }
@@ -127,6 +141,24 @@ export function createApp({ storeFor, loadClient, getProvider, env = {} }) {
     // TODO: send to cfg.summaryEmail (e.g. Cloudflare Email Workers or Resend) and set email_status = 'sent'.
     return c.json({ ok: true, summaryId: row.id, summary });
   });
+
+  // Admin: knowledge base. Needs header "Authorization: Bearer <ADMIN_TOKEN>". No token set means admin is off.
+  const admin = async (c, next) => {
+    const token = env.ADMIN_TOKEN, got = (c.req.header('authorization') || '').replace(/^Bearer\s+/i, '');
+    if (!token || !got || !await sameSecret(got, token)) return c.json({ error: 'Unauthorised' }, 401);
+    const cfg = await client(c.req.param('clientId'));
+    if (!cfg) return c.json({ error: 'Unknown client' }, 404);
+    if (!kb) return c.json({ error: 'Knowledge base is not configured' }, 503);
+    c.set('cfg', cfg); return next();
+  };
+  // Crawl the client's website (if set) and reload its FAQs. Returns pages, chunk counts and anything skipped.
+  app.post('/api/admin/:clientId/reindex', admin, async c => c.json(await kb.reindex(c.get('cfg'))));
+  app.get('/api/admin/:clientId/kb', admin, async c => c.json(await kb.stats(c.get('cfg').clientId)));
+  // What the chat would retrieve for a question (for checking answers and tenant isolation). ?min=0 shows weaker matches too.
+  app.get('/api/admin/:clientId/search', admin, async c => c.json({ clientId: c.get('cfg').clientId,
+    results: (await kb.search(c.get('cfg').clientId, clip(c.req.query('q'), 500), c.req.query('min') ? { min: Number(c.req.query('min')), k: 8 } : undefined)).map(r => ({ id: r.id, client_id: r.client_id, score: r.score, source: r.source, url: r.url, title: r.title, text: clip(r.text, 300) })) }));
+  // PDF upload: STUB. Planned: store the file in R2, extract text, then add chunks with source 'pdf'.
+  app.post('/api/admin/:clientId/pdf', admin, c => c.json({ error: 'PDF upload is not built yet. Add the text as kbFaqs in the client config for now.' }, 501));
 
   return app;
 }

@@ -3,14 +3,22 @@
 //   { type: 'status', text }   short "working on it" label shown while waiting
 //   { type: 'delta', text }    a piece of the reply text
 //   { type: 'actions', actions } widget UI to show after the reply (chips, lead form, booking form)
+// context: knowledge base chunks for this client (best first). When there are any, the reply is a short
+// excerpt from the best one plus its source, so retrieval is visible without Grok.
+import { excerpt, sourceLabel } from '../kb/excerpt.js';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 export function createMockProvider({ delayMs = 600 } = {}) {
   return {
     name: 'mock',
-    async *chat({ client, messages }) {
+    async *chat({ client, messages, context = [] }) {
       const last = [...messages].reverse().find(m => m.role === 'user')?.content || '';
       const r = route(client, last);
+      const best = context[0];
+      if (best) {
+        const ex = excerpt(best.text, last);
+        if (ex) { r.text = `${ex} (Source: ${sourceLabel(best)})`; r.status = 'Checking our info...'; }
+      }
       yield { type: 'status', text: r.status };
       await sleep(delayMs);
       for (const word of r.text.match(/\S+\s*/g) || []) { yield { type: 'delta', text: word }; await sleep(15); }

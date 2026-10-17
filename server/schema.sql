@@ -47,3 +47,31 @@ CREATE TABLE IF NOT EXISTS summaries (
   email_status    TEXT NOT NULL DEFAULT 'not_sent',  -- later: 'sent' once email is wired up
   created_at      TEXT NOT NULL
 );
+
+-- Knowledge base: text chunks from the client's website, FAQs and (later) PDFs.
+-- The embedding for each chunk lives in Vectorize (index systembrain-kb, namespace = client_id) under the same id.
+CREATE TABLE IF NOT EXISTS kb_chunks (
+  id          TEXT PRIMARY KEY,           -- sha256(client_id, url, text), also the Vectorize vector id
+  client_id   TEXT NOT NULL,
+  source      TEXT NOT NULL DEFAULT 'web' CHECK (source IN ('web','faq','pdf')),
+  url         TEXT NOT NULL,              -- page URL, or faq:<client>:<n> for FAQ entries
+  title       TEXT,
+  text        TEXT NOT NULL,
+  hash        TEXT NOT NULL,              -- sha256 of text
+  updated_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_kb_chunks_client ON kb_chunks(client_id, url);
+
+CREATE TABLE IF NOT EXISTS kb_runs (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_id   TEXT NOT NULL,
+  started_at  TEXT NOT NULL,
+  finished_at TEXT,
+  website     TEXT,
+  pages       INTEGER,
+  chunks      INTEGER,
+  added       INTEGER,
+  removed     INTEGER,
+  error       TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_kb_runs_client ON kb_runs(client_id, id);

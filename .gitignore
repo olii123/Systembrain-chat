@@ -6,3 +6,5 @@ server/data/*.json
 !.env.example
 .assets/
 .wrangler/
+# Admin token for the Worker's /api/admin endpoints. Never commit it.
+.admin-token

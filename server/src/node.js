@@ -7,6 +7,7 @@ import { dirname, join, relative } from 'node:path';
 import { createApp } from './app.js';
 import { createJsonStore } from './store/json-store.js';
 import { getProvider } from './providers/index.js';
+import { createLocalKb } from './kb/local-kb.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(here, '..', '..');
@@ -15,7 +16,10 @@ const env = process.env;
 const jsonStore = createJsonStore(env.DB_FILE || join(rootDir, 'server', 'data', 'db.json'));
 const loadClient = async id => { try { return JSON.parse(await readFile(join(rootDir, 'server', 'clients', `${id}.json`), 'utf8')); } catch { return null; } };
 
-const app = createApp({ storeFor: () => jsonStore, loadClient, getProvider, env });
+// Local knowledge base: keyword search over server/data/kb.json. Fill it with `npm run kb:local -- <clientId>`
+// or POST /api/admin/<clientId>/reindex (set ADMIN_TOKEN in the environment first).
+const kb = createLocalKb(env.KB_FILE || join(rootDir, 'server', 'data', 'kb.json'));
+const app = createApp({ storeFor: () => jsonStore, loadClient, getProvider, env, kb });
 app.use('/widget/*', serveStatic({ root: rel('.'), onFound: (_p, c) => c.header('cache-control', 'no-cache') }));
 app.use('/demo/*', serveStatic({ root: rel('.') }));
 app.get('/', c => c.redirect('/demo/'));
